@@ -21,6 +21,10 @@ module apb_intfc(
   input rx_fifo_full,
   input rbrf,
 
+  input loop_txd,
+  input uart_rxd,
+  input uart_txd,
+
   output loop,
   output thr_wr_en,
   output rbr_rd_en,
@@ -232,11 +236,11 @@ module apb_intfc(
       32'h0   : rd_data = {24'b0, rbr};
       32'h4   : rd_data = {29'b0, ier_q[2:0]};
       32'h8   : rd_data = {24'b0, fifoen, fifoen, 5'b0, ~ uart_intpt};
-      32'h8   : rd_data = {26'b0, lcr_q [5:0]};
-      32'h8   : rd_data = {17'b0, temt, thre, 1'b0, fe, pe, 1'b0, dr};
-      32'h8   : rd_data = {24'b0, dll};
-      32'h8   : rd_data = {24'b0, dlh};
-      32'h8   : rd_data = {17'b0, pwr_q[1:0], 13'b0};
+      32'hC   : rd_data = {26'b0, lcr_q [7:0]};
+      32'h14  : rd_data = {14'b0, loop_txd, uart_txd, uart_rxd, temt, thre, bi, fe, pe, oe, dr};
+      32'h20  : rd_data = {24'b0, dll};
+      32'h24  : rd_data = {24'b0, dlh};
+      32'h30  : rd_data = {17'b0, pwr_q[1:0], 13'b0};
       default : rd_data = 32'bx;
     endcase
   end

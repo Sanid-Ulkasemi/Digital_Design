@@ -188,6 +188,11 @@ module uart_top (
     .uart_break    ( uart_break    ),
     .rx_fifo_full  ( rx_fifo_full  ),
     .rbrf          ( rbrf          ),
+
+    .uart_rxd      ( uart_rxd      ),
+    .uart_txd      ( uart_txd      ),
+    .loop_txd      ( loop_txd      ),
+
     .uart_intpt    ( uart_intpt    ),
     .loop          ( loop          ),
     .thr_wr_en     ( thr_wr_en     ),
