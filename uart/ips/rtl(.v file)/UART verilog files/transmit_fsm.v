@@ -1,4 +1,4 @@
-module transmit_fsm (
+(* keep_hierarchy = "true" *)module transmit_fsm (
   input pclk,
   input presetn,
   input utrst,

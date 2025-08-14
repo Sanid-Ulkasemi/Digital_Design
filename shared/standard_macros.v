@@ -488,7 +488,7 @@ endmodule
 
 // Synchronous FIFO
 
-(* keep_hierarchy = "true" *)module fifo_sync #( 
+module fifo_sync #( 
      parameter FIFO_DEPTH = 8,
 	   parameter DATA_WIDTH = 32,
      parameter FIFO_DEPTH_LOG = 3

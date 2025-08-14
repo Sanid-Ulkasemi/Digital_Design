@@ -1,4 +1,4 @@
-module uart_receiver_top (
+(* keep_hierarchy = "true" *)module uart_receiver_top (
   input  logic       pclk,
   input  logic       presetn,
   input  logic       utrrst,
@@ -17,11 +17,12 @@ module uart_receiver_top (
   output logic       parity_error,
   output logic       error_check,
   output logic       receive_load_en,
-  output logic       uart_break
+  output logic       uart_break,
 );
 
   logic received_parity;
-
+    
+   
   parity_checker u_parity_checker (
     .rsr_data        ( rsr_data       ),
     .received_parity ( received_parity),

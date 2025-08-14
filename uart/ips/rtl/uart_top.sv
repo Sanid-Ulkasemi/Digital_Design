@@ -90,6 +90,7 @@ module uart_top (
     logic       error_check;
 
     logic       voting_edge;
+    logic[31:0] rxd_edge;
 
   uart_receiver_top u_uart_receive_top (
     .pclk            ( pclk         ),
@@ -204,6 +205,7 @@ module uart_top (
     .uart_break    ( uart_break    ),
     .rx_fifo_full  ( rx_fifo_full  ),
     .rbrf          ( rbrf          ),
+    
     .uart_intpt    ( uart_intpt    ),
     .loop          ( loop          ),
     .thr_wr_en     ( thr_wr_en     ),

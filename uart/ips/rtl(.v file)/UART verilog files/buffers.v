@@ -1,4 +1,4 @@
-module buffers(
+(* keep_hierarchy = "true" *)module buffers(
   input        pclk,
   input        presetn,
   
@@ -114,7 +114,7 @@ module buffers(
   reg [10:0] just_rbr;
   always @(posedge pclk or negedge presetn) begin
     if (~presetn)
-      just_rbr <= 11'b00000000000;
+      just_rbr <= 11'b0000_0000_000;
     else
       just_rbr <= d_just_rbr;
   end

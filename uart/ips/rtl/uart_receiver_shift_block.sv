@@ -1,4 +1,4 @@
-module uart_receiver_shift_block (
+(* keep_hierarchy = "true" *)module uart_receiver_shift_block (
   input  logic       pclk,             // UART clock
   input  logic       presetn,          // Active-low reset
   input  logic       receive_shift_en, // Enable shift register

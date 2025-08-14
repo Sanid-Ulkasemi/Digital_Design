@@ -1,4 +1,4 @@
-module parity_checker (
+(* keep_hierarchy = "true" *)module parity_checker (
   input  logic [7:0] rsr_data,
   input  logic       received_parity,
   input  logic       pen,

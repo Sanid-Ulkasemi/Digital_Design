@@ -1,4 +1,4 @@
-module clock_gen(
+(* keep_hierarchy = "true" *)module clock_gen(
   input        pclk,
   input        presetn,
   input        sample_clk_clr,

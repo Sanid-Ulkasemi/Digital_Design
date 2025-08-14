@@ -1,4 +1,4 @@
-module apb_intfc(
+(* keep_hierarchy = "true" *)module apb_intfc(
   input pclk,
   input presetn,
   input psel,
@@ -58,7 +58,6 @@ module apb_intfc(
   wire ier_wr_en;
   wire fcr_wr_en;
   wire lcr_wr_en;
-  wire lsr_wr_en;
   wire dll_wr_en;
   wire dlh_wr_en;
   wire pwremu_mgmt_wr_en;
@@ -83,7 +82,6 @@ module apb_intfc(
   assign ier_wr_en = (paddr[7:0] == 8'h4) & wr_en;
   assign fcr_wr_en = (paddr[7:0] == 8'h8) & wr_en;
   assign lcr_wr_en = (paddr[7:0] == 8'hC) & wr_en;
-  assign lsr_wr_en = (paddr[7:0] == 8'h14) & wr_en;
   assign dll_wr_en = (paddr[7:0] == 8'h20) & wr_en;
   assign dlh_wr_en = (paddr[7:0] == 8'h24) & wr_en;
   assign pwremu_mgmt_wr_en = (paddr[7:0] == 8'h30) & wr_en;
@@ -92,11 +90,13 @@ module apb_intfc(
   wire [2:0] ier_d;
   reg [2:0] ier_q;
 
+  assign ier_d = ier_wr_en ? pwdata[2:0] : ier_q;
+  
   always @(posedge pclk or negedge presetn) begin
-    if (!presetn)
+    if (~presetn)
       ier_q <= 3'b0;
-    else if (ier_wr_en)
-      ier_q <= pwdata[2:0];
+    else
+      ier_q <= ier_d[2:0];
   end
 
   assign erbi = ier_q[0];
@@ -106,28 +106,31 @@ module apb_intfc(
   // FIFO control register
   wire [4:0] fcr_d;
   reg [4:0] fcr_q;
-
+    
+  assign fcr_d = fcr_wr_en ? {pwdata[7:6], pwdata[2:0]} : fcr_q;
   always @(posedge pclk or negedge presetn) begin
-    if (!presetn)
+    if (~presetn)
       fcr_q <= 5'b0;
-    else if (fcr_wr_en)
-      fcr_q <= {pwdata[7:6], pwdata[2:0]};
+    else
+      fcr_q <= fcr_d;
   end
 
   assign fifoen = fcr_q[0];
   assign rxclr = fcr_q[1];
   assign txclr = fcr_q[2];
-  assign rxfiftl = fcr_q[3];
+  assign rxfiftl = fcr_q[4:3];
 
   // Line control register
   reg [7:0] lcr_q;
   wire [7:0] lcr_d;
-
+    
+  assign lcr_d = lcr_wr_en ? pwdata[7:0] : lcr_q;
+  
   always @(posedge pclk or negedge presetn) begin
-    if (!presetn)
+    if (~presetn)
       lcr_q <= 8'b0;
-    else if (lcr_wr_en)
-      lcr_q <= pwdata[7:0];
+    else
+      lcr_q <= lcr_d;
   end
 
   assign wls = lcr_q[1:0];
@@ -172,7 +175,7 @@ module apb_intfc(
 
 
 
-  assign lsr_d = {temt_st_d, thre_st_d, bi_st_d, frame_st_d, parity_st_d, oe_st_d ,de_st_d};
+  assign lsr_d = {rxfifoe_st_d, temt_st_d, thre_st_d, bi_st_d, frame_st_d, parity_st_d, oe_st_d ,de_st_d};
   assign bi = lsr_q[4];
   assign oe = lsr_q[1];
   assign pe = lsr_q[2];
@@ -182,8 +185,8 @@ module apb_intfc(
   assign dr = lsr_q[0];
 
   always @(posedge pclk or negedge presetn) begin
-    if (!presetn)
-      lsr_q <= 7'b1100000;
+    if (~presetn)
+      lsr_q <= 8'b0110_0000;
     else
       lsr_q <= lsr_d;
   end
@@ -215,32 +218,68 @@ module apb_intfc(
    .q           ( dlh     )
   );
   // Power and emulation
-  reg [1:0] pwr_d;
+  wire [1:0] pwr_d;
   reg [1:0] pwr_q;
-
+    
+  assign pwr_d = pwremu_mgmt_wr_en ? pwdata[15:14] : pwr_q;
+  
   always @(posedge pclk or negedge presetn) begin
-    if (!presetn)
+    if (~presetn)
       pwr_q <= 2'b0;
-    else if (pwremu_mgmt_wr_en)
-      pwr_q <= pwdata[14:13];
+    else
+      pwr_q <= pwr_d;
   end
 
   assign utrst = pwr_q[1];
   assign urrst = pwr_q[0];
 
-  reg [31:0] rd_data;
+  //Internal baud rate calculation.
+  wire[31:0] br_ps;
+  wire[31:0] br_pl;
+  wire wr_br_ps;
+  wire wr_br_pl;
+  
+  assign wr_br_ps = (paddr[7:0] == 8'h34) & wr_en;
+  assign wr_br_pl = (paddr[7:0] == 8'h38) & wr_en;
+  
+  counter #(
+	.RESET_VALUE (1'b0),
+	.COUNTER_WIDTH (32)
+    )u_br_ps_counter(
+	.clk(pclk),
+	.reset_b(presetn),
+	.clear(wr_br_ps),
+	.en(~uart_rxd),
+	
+	.count(br_ps)
+    );
+    
+    counter #(
+	.RESET_VALUE (1'b0),
+	.COUNTER_WIDTH (32)
+    )u_br_pl_counter(
+	.clk(pclk),
+	.reset_b(presetn),
+	.clear(wr_br_pl),
+	.en(~uart_txd),
+	
+	.count(br_pl)
+    );
 
+  reg [31:0] rd_data;
   //Read logic
   always@(*)begin
-    case(paddr[5:0])
-      32'h0   : rd_data = {24'b0, rbr};
+    case(paddr[7:0])
+      32'h0   : rd_data = {24'b0, rbr[7:0]};
       32'h4   : rd_data = {29'b0, ier_q[2:0]};
-      32'h8   : rd_data = {24'b0, fifoen, fifoen, 5'b0, ~ uart_intpt};
-      32'hC   : rd_data = {26'b0, lcr_q [7:0]};
-      32'h14  : rd_data = {14'b0, loop_txd, uart_txd, uart_rxd, temt, thre, bi, fe, pe, oe, dr};
+      32'h8   : rd_data = {24'b0, fifoen, fifoen, 5'b0, ~uart_intpt};
+      32'hC   : rd_data = {24'b0, lcr_q [7:0]};
+      32'h14  : rd_data = {21'b0, loop_txd, uart_txd, uart_rxd, lsr_q};
       32'h20  : rd_data = {24'b0, dll};
       32'h24  : rd_data = {24'b0, dlh};
-      32'h30  : rd_data = {17'b0, pwr_q[1:0], 13'b0};
+      32'h30  : rd_data = {16'b0, pwr_q[1:0], 14'b0};
+      32'h34  : rd_data = br_ps;
+      32'h38  : rd_data = br_pl;
       default : rd_data = 32'bx;
     endcase
   end

@@ -10,7 +10,7 @@ module uart_receiver_shift_block (
   input [1:0] wls,
   input pen,
   
-  output received_parity,
+  output reg received_parity,
   output frame_error,     // Frame error flag
   output [7:0] rsr_data,
   output all_zero,
@@ -68,9 +68,9 @@ module uart_receiver_shift_block (
 
   always @ (*) begin
     casez (wls)
-      2'b00   : data_with_parity = {3'b0, shift_reg_out[7:3]};
-      2'b01   : data_with_parity = {2'b0, shift_reg_out[7:2]};
-      2'b10   : data_with_parity = {1'b0, shift_reg_out[7:1]};
+      2'b00   : data_with_parity = {3'b0, shift_reg_out[4:0]};
+      2'b01   : data_with_parity = {2'b0, shift_reg_out[5:0]};
+      2'b10   : data_with_parity = {1'b0, shift_reg_out[6:0]};
       2'b11   : data_with_parity = {shift_reg_out[7:0]};
       default : data_with_parity = 8'bx;
     endcase
@@ -78,17 +78,41 @@ module uart_receiver_shift_block (
 
   always @ (*) begin
     casez (wls)
-      2'b00   : data_without_parity = {3'b0, shift_reg_out[8:4]};
-      2'b01   : data_without_parity = {2'b0, shift_reg_out[8:3]};
-      2'b10   : data_without_parity = {1'b0, shift_reg_out[8:2]};
-      2'b11   : data_without_parity = {shift_reg_out[8:1]};
+      2'b00   : data_without_parity = {3'b0, shift_reg_out[4:0]};
+      2'b01   : data_without_parity = {2'b0, shift_reg_out[5:0]};
+      2'b10   : data_without_parity = {1'b0, shift_reg_out[6:0]};
+      2'b11   : data_without_parity = {shift_reg_out[7:0]};
       default : data_without_parity = 8'bx;
     endcase
   end
-
+    
+  //parity selection
+  always @ (*) begin
+    casez (wls)
+      2'b00   : received_parity = shift_reg_out[5];
+      2'b01   : received_parity = shift_reg_out[6];
+      2'b10   : received_parity = shift_reg_out[7];
+      2'b11   : received_parity = shift_reg_out[8];
+      default : received_parity = 1'bx;
+    endcase
+  end
+  
+  reg fm_er;
+  //frameError
+  always @ (*) begin
+    casez (wls)
+      2'b00   : fm_er = shift_reg_out[6];
+      2'b01   : fm_er = shift_reg_out[7];
+      2'b10   : fm_er = shift_reg_out[8];
+      2'b11   : fm_er = shift_reg_out[9];
+      default : fm_er = 1'bx;
+    endcase
+  end
+  
+  
   assign rsr_data        = pen ? data_with_parity : data_without_parity;
-  assign received_parity = shift_reg_out[8];
-  assign frame_error     = (error_check  & (~ shift_reg_out[9]));
+
+  assign frame_error     = (error_check  & (~fm_er));
   assign all_zero        = ~ (| shift_reg_out);
 
 endmodule

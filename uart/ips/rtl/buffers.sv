@@ -1,4 +1,4 @@
-module buffers(
+(* keep_hierarchy = "true" *)module buffers(
   input  logic        pclk,
   input  logic        presetn,
                       

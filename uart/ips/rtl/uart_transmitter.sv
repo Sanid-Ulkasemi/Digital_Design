@@ -1,4 +1,4 @@
-module uart_transmitter (
+(* keep_hierarchy = "true" *)module uart_transmitter (
   input  logic       pclk,
 	input  logic       presetn,
   input  logic       utrst,

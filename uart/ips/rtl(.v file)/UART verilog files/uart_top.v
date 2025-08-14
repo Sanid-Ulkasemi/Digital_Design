@@ -1,4 +1,4 @@
-module uart_top (
+(* keep_hierarchy = "true" *)module uart_top (
   input pclk,
   input presetn,
   input psel,

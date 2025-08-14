@@ -1,4 +1,4 @@
-module uart_intpt_gen(
+(* keep_hierarchy = "true" *)module uart_intpt_gen(
 		input logic       thre,
     input logic       etbei,
     input logic       pe,

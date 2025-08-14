@@ -1,4 +1,4 @@
-module uart_receive_fsm (
+(* keep_hierarchy = "true" *)module uart_receive_fsm (
   input  logic pclk,
   input  logic presetn,
   input  logic utrrst,       //uart receive enable

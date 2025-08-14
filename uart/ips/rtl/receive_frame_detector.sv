@@ -1,4 +1,4 @@
-module receive_frame_detector (
+(* keep_hierarchy = "true" *)module receive_frame_detector (
   input  logic pclk,
   input  logic presetn,
   input  logic receive_frame_counter_en,

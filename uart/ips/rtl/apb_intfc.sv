@@ -1,4 +1,4 @@
-module apb_intfc(
+(* keep_hierarchy = "true" *)module apb_intfc(
   input  logic        pclk,
   input  logic        presetn,
   input  logic        psel,
@@ -20,6 +20,7 @@ module apb_intfc(
   input  logic        uart_break,
   input  logic        rx_fifo_full,
   input  logic        rbrf,
+  
                       
   output logic        loop,
   output logic        thr_wr_en,
@@ -256,19 +257,23 @@ module apb_intfc(
    .q           ( pwr_q   )
   );
   
+  logic[31:0] br_ps;
+  logic[31:0] br_pl;
+  
 
   logic[31:0] rd_data;
   //Read logic
   always@(*)begin
-    case(paddr[5:0])
-      32'h0   : rd_data = {24'b0, rbr};
-      32'h4   : rd_data = {29'b0, ier_q[2:0]};
-      32'h8   : rd_data = {24'b0, fifoen, fifoen, 5'b0, ~ uart_intpt};
-      32'h8   : rd_data = {26'b0, lcr_q [5:0]};
-      32'h8   : rd_data = {17'b0, temt, thre, 1'b0, fe, pe, 1'b0, dr};
-      32'h8   : rd_data = {24'b0, dll};
-      32'h8   : rd_data = {24'b0, dlh};
-      32'h8   : rd_data = {17'b0, pwr_q[1:0], 13'b0};
+    case(paddr[7:0])
+      8'h0   : rd_data = {24'b0, rbr};
+      8'h4   : rd_data = {29'b0, ier_q[2:0]};
+      8'h8   : rd_data = {24'b0, fifoen, fifoen, 5'b0, ~ uart_intpt};
+      8'hC   : rd_data = {26'b0, lcr_q [5:0]};
+      8'h14   : rd_data = {17'b0, temt, thre, 1'b0, fe, pe, 1'b0, dr};
+      8'h20   : rd_data = {24'b0, dll};
+      8'h24   : rd_data = {24'b0, dlh};
+      8'h30   : rd_data = {17'b0, pwr_q[1:0], 13'b0};
+      8'h34   : rd_data = rxd_edge;
       default : rd_data = 32'bx;
     endcase
   end
