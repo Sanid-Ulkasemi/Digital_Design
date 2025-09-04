@@ -10,9 +10,9 @@ Author -  Md. Niaz Mahmud Sanid,  Razi Mudassir,  Shakil Ahmed Shawon,  Sattik D
       * rtl
       * sim
   * SPI
-    *Vitis
-    *rtl
-    *rtl_mudassir
-    *tb
+    * Vitis
+    * rtl
+    * rtl_mudassir
+    * tb
   * Vitis
   * Vivado
