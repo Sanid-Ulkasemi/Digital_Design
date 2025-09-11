@@ -7,10 +7,12 @@ module shift_register_block (
   input  logic [7:0] tx_data,
   input  logic [6:0] slave_addr,
   input  logic       sda_in,
+  input  logic       shift_en,
   
   output logic [7:0] dr_data,
   output logic       read,
-  output logic       sda_out
+  output logic       sda_out,
+  output logic       comp_match
   
 );
   logic bit_out;
@@ -21,7 +23,7 @@ module shift_register_block (
   universal_shift_reg #(
     .DATA_WIDTH(8)
   ) shift_inst (
-    .clk          ( pckl         ),
+    .clk          ( pclk         ),
     .rst          ( presetn      ),      
     .select       ( shift_mode   ),
     .p_din        ( tx_data      ),
@@ -31,6 +33,8 @@ module shift_register_block (
     .s_left_dout  (  bit_out     ), 
     .s_right_dout (              )
   );
+  
+  assign comp_match = (slave_addr == dr_data[7:1]);
 
   always @ (*) begin
     casez ({ack_cycle,dack_cycle})
