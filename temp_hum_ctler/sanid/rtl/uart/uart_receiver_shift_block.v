@@ -1,0 +1,118 @@
+module uart_receiver_shift_block (
+  input pclk,             // UART clock
+  input presetn,          // Active-low reset
+  input receive_shift_en, // Enable shift register
+  input voting_shift_en,
+  input uart_rxd,         // Serial data input
+  input error_check,
+  input loop_txd,
+  input loop,
+  input [1:0] wls,
+  input pen,
+  
+  output reg received_parity,
+  output frame_error,     // Frame error flag
+  output [7:0] rsr_data,
+  output all_zero,
+  output rx_data
+);
+  
+  wire [1:0] shift_mode_voting_reg;
+  wire       serial_in;
+  wire [2:0] rx_data_for_sample;
+
+  assign shift_mode_voting_reg = voting_shift_en ? 2'b01 : 2'b00;
+  assign serial_in  = loop ? loop_txd : uart_rxd; 
+  
+
+  universal_shift_reg #(
+    .DATA_WIDTH(3)
+  ) voting_shift_inst (
+    .clk          ( pclk         ),
+    .rst          ( presetn      ),      
+    .select       ( shift_mode_voting_reg ),
+    .p_din        ( 10'b0           ),
+    .s_left_din   ( 1'b0           ),
+    .s_right_din  ( serial_in    ),
+    .p_dout       ( rx_data_for_sample),
+    .s_left_dout  (              ), 
+    .s_right_dout (              )
+  );
+
+
+  assign rx_data = (rx_data_for_sample[0] & rx_data_for_sample[1]) | (rx_data_for_sample[1] & rx_data_for_sample[2]) | (rx_data_for_sample[0] & rx_data_for_sample[2]);
+  
+
+  wire [9:0] shift_reg_out;
+  //logic       stop_bit_value;
+
+
+  assign shift_mode_rx_reg = receive_shift_en ? 2'b01 : 2'b00;
+
+  universal_shift_reg #(
+    .DATA_WIDTH(10)
+  ) receiver_shift_inst (
+    .clk          ( pclk         ),
+    .rst          ( presetn      ),      
+    .select       ( shift_mode_rx_reg   ),
+    .p_din        ( 10'b0           ),
+    .s_left_din   ( 1'b0           ),
+    .s_right_din  ( rx_data    ),
+    .p_dout       ( shift_reg_out),
+    .s_left_dout  (              ), 
+    .s_right_dout (              )
+  );
+
+  reg [7:0] data_with_parity;
+  reg [7:0] data_without_parity;
+
+  always @ (*) begin
+    casez (wls)
+      2'b00   : data_with_parity = {3'b0, shift_reg_out[4:0]};
+      2'b01   : data_with_parity = {2'b0, shift_reg_out[5:0]};
+      2'b10   : data_with_parity = {1'b0, shift_reg_out[6:0]};
+      2'b11   : data_with_parity = {shift_reg_out[7:0]};
+      default : data_with_parity = 8'bx;
+    endcase
+  end
+
+  always @ (*) begin
+    casez (wls)
+      2'b00   : data_without_parity = {3'b0, shift_reg_out[4:0]};
+      2'b01   : data_without_parity = {2'b0, shift_reg_out[5:0]};
+      2'b10   : data_without_parity = {1'b0, shift_reg_out[6:0]};
+      2'b11   : data_without_parity = {shift_reg_out[7:0]};
+      default : data_without_parity = 8'bx;
+    endcase
+  end
+    
+  //parity selection
+  always @ (*) begin
+    casez (wls)
+      2'b00   : received_parity = shift_reg_out[5];
+      2'b01   : received_parity = shift_reg_out[6];
+      2'b10   : received_parity = shift_reg_out[7];
+      2'b11   : received_parity = shift_reg_out[8];
+      default : received_parity = 1'bx;
+    endcase
+  end
+  
+  reg fm_er;
+  //frameError
+  always @ (*) begin
+    casez (wls)
+      2'b00   : fm_er = shift_reg_out[6];
+      2'b01   : fm_er = shift_reg_out[7];
+      2'b10   : fm_er = shift_reg_out[8];
+      2'b11   : fm_er = shift_reg_out[9];
+      default : fm_er = 1'bx;
+    endcase
+  end
+  
+  
+  assign rsr_data        = pen ? data_with_parity : data_without_parity;
+
+  assign frame_error     = (error_check  & (~fm_er));
+  assign all_zero        = ~ (| shift_reg_out);
+
+endmodule
