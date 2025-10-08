@@ -1,0 +1,8 @@
+set_property PACKAGE_PIN D5       [get_ports led0_0]
+set_property IOSTANDARD  LVCMOS33 [get_ports led0_0] 
+set_property PACKAGE_PIN D6       [get_ports led1_0]    
+set_property IOSTANDARD  LVCMOS33 [get_ports led1_0]
+set_property PACKAGE_PIN A5       [get_ports led2_0] 
+set_property IOSTANDARD  LVCMOS33 [get_ports led2_0] 
+set_property PACKAGE_PIN B5       [get_ports led3_0] 
+set_property IOSTANDARD  LVCMOS33 [get_ports led3_0]
